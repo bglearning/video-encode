@@ -7,20 +7,23 @@ import open_clip
 class FrameMapper:
     """maps frames -> embeddings (or captions"""
 
-    def __init__(self, model, device, tokenizer=None):
+    def __init__(self, model, device, txt_processor=None):
         self.model = model
         self.device = device
-        self.tokenizer = tokenizer
+        self.txt_processor = txt_processor
 
     def __call__(self, batch, captions=None):
         with torch.no_grad(), torch.cuda.amp.autocast():
-            embeddings = self.model.encode_image(batch).cpu().detach().numpy()
+            # embeddings = self.model.encode_image(batch).cpu().detach().numpy()
+            embeddings = self.model.extract_features({'image': batch}, mode="image").cpu().detach().numpy()
         return embeddings
 
     def encode_captions(self, captions):
         with torch.no_grad(), torch.cuda.amp.autocast():
-            tokens = self.tokenizer(captions).to(self.device)
-            caption_embeddings = self.model.encode_text(tokens).cpu().detach().numpy()
+            # tokens = self.tokenizer(captions).to(self.device)
+            # caption_embeddings = self.model.encode_text(tokens).cpu().detach().numpy()
+            text_input = self.txt_processor(captions)
+            caption_embeddings = self.model.extract_features({'text_input': text_input}, mode="text")
         return caption_embeddings
 
     def generate_captions(self, batch):

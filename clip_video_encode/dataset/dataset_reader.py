@@ -14,6 +14,8 @@ import webdataset as wds
 
 from torch.utils.data import DataLoader
 
+from blip_utils import blip_text_processors
+
 
 def standardize_embedding_shape(emb, seq_len):
     if len(emb) > seq_len:
@@ -48,7 +50,8 @@ def create_embeddingwebdataset(
     dataset = wds.WebDataset(urls)
     # TODO: different tokeinzers??
     def tokenizer(text):
-        return open_clip.tokenize([text])[0]
+        # return open_clip.tokenize([text])[0]
+        return blip_text_processors['eval'](text)
 
     def preprocess_dataset(item):
         output = {}

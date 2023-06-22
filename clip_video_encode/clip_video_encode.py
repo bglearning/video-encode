@@ -2,7 +2,7 @@
 import sys
 import time
 
-import open_clip
+# import open_clip
 import math
 import numpy as np
 import torch
@@ -24,6 +24,8 @@ import braceexpand
 import glob
 import fsspec
 import io
+
+from blip_utils import blip_model, blip_text_processors, blip_vis_processors
 
 BATCH_SIZE = 256
 IMG_SIZE = 224
@@ -264,11 +266,12 @@ def clip_video_encode(
         writer = WebDatasetWriter(dest, oom_shard_count, "npy", maxcount=1e6, shard_id=starting_shard_id)
 
     # Initialize model:
-    model, _, preprocess = open_clip.create_model_and_transforms(oc_model_name, pretrained=pretrained, device=device)
-    tokenizer = open_clip.get_tokenizer(oc_model_name)
-    preprocess.transforms = [ToPILImage()] + preprocess.transforms[-3:]
+    # model, _, preprocess = open_clip.create_model_and_transforms(oc_model_name, pretrained=pretrained, device=device)
+    # tokenizer = open_clip.get_tokenizer(oc_model_name)
+    # preprocess.transforms = [ToPILImage()] + preprocess.transforms[-3:]
+    preprocess = blip_vis_processors['eval']
     fm = FrameMapper(
-        model, device, tokenizer=tokenizer if (caption_similarity or (captioning_strategy != "none")) else None
+        blip_model, device, txt_processor=blip_text_processors['eval']
     )
 
     if input_format == "table":
