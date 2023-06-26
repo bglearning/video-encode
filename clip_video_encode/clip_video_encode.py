@@ -270,6 +270,7 @@ def clip_video_encode(
     # tokenizer = open_clip.get_tokenizer(oc_model_name)
     # preprocess.transforms = [ToPILImage()] + preprocess.transforms[-3:]
     preprocess = blip_vis_processors['eval']
+    preprocess.transform.transforms = [ToPILImage()] + preprocess.transform.transforms[-3:]
     fm = FrameMapper(
         blip_model, device, txt_processor=blip_text_processors['eval']
     )
