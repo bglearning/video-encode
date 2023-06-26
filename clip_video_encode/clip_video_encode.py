@@ -25,7 +25,7 @@ import glob
 import fsspec
 import io
 
-from blip_utils import blip_model, blip_text_processors, blip_vis_processors
+from .blip_utils import blip_model, blip_text_processors, blip_vis_processors
 
 BATCH_SIZE = 256
 IMG_SIZE = 224

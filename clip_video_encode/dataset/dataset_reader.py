@@ -14,7 +14,7 @@ import webdataset as wds
 
 from torch.utils.data import DataLoader
 
-from blip_utils import blip_text_processors
+from ..blip_utils import blip_text_processors
 
 
 def standardize_embedding_shape(emb, seq_len):
