@@ -22,8 +22,10 @@ class FrameMapper:
         with torch.no_grad(), torch.cuda.amp.autocast():
             # tokens = self.tokenizer(captions).to(self.device)
             # caption_embeddings = self.model.encode_text(tokens).cpu().detach().numpy()
-            text_input = self.txt_processor(captions)
-            caption_embeddings = self.model.extract_features({'text_input': text_input}, mode="text").text_embeds
+            text_inputs = []
+            for caption in captions:
+                text_inputs.append(self.txt_processor(caption))
+            caption_embeddings = self.model.extract_features({'text_input': text_inputs}, mode="text").text_embeds
         return caption_embeddings
 
     def generate_captions(self, batch):
