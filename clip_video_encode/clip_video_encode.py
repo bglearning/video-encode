@@ -63,7 +63,7 @@ def encode_chunk(
                 embeddings.append(emb)
 
         caption_embs = None
-        if mapper.tokenizer is not None:
+        if mapper.txt_processor is not None:
             # TODO: is there a better way of doing this?
             # here we will compute similarity of empty string...
             captions = [m["caption"] if "caption" in m else "" for m in meta]
