@@ -56,7 +56,7 @@ class OpenClipEncoder(VideoEncoder):
 class OpenAIClipEncoder(VideoEncoder):
     """VideoEncoder that uses OpenAI CLIP
     """
-    def __init__(self, model_name="ViT-B-32", device="cpu") -> None:
+    def __init__(self, model_name="ViT-B/32", device="cpu") -> None:
         super().__init__()
         self.model, self.preprocess = clip.load(model_name, device=device)
         self.preprocess.transforms = [ToPILImage()] + self.preprocess.transforms
