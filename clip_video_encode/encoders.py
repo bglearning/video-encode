@@ -59,6 +59,7 @@ class OpenAIClipEncoder(VideoEncoder):
     def __init__(self, model_name="ViT-B-32", device="cpu") -> None:
         super().__init__()
         self.model, self.preprocess = clip.load("ViT-B/32", device=device)
+        self.preprocess.transforms = [ToPILImage()] + self.preprocess.transforms
         self.model.eval()
 
     @property
