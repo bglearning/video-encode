@@ -168,6 +168,7 @@ def clip_video_encode(
     dest="",
     output_format="files",
     take_every_nth=25,
+    encoder_type="open_clip",
     input_format="table",
     frame_workers=1,
     frame_memory_size=4,
@@ -197,6 +198,8 @@ def clip_video_encode(
         str: "files" or "webdataset"
       take_every_nth:
         int: only take every nth frame
+      encoder_type:
+        str: Encoder to use among ('open_clip', 'openai_clip', 'blip2')
       frame_workers:
         int: number of Processes to distribute video reading to.
       frame_memory_size:
@@ -272,7 +275,7 @@ def clip_video_encode(
         writer = WebDatasetWriter(dest, oom_shard_count, "npy", maxcount=1e6, shard_id=starting_shard_id)
 
     # Initialize model:
-    fm = create_encoder(encoder_type="openai_clip")
+    fm = create_encoder(encoder_type=encoder_type)
     preprocess = fm.preprocessor
 
     if input_format == "table":
