@@ -12,13 +12,22 @@ from io import BytesIO
 class FileWriter:
     """Writes output as files."""
 
-    def __init__(self, output_folder):
+    def __init__(self, output_folder, output_key_start: int=0):
         self.output_folder = output_folder
+        self.output_key_start = output_key_start
 
         self.fs, self.output_folder = fsspec.core.url_to_fs(output_folder)
 
     def write(self, arr, key, metadata=None):
         """write sample to file."""
+        try:
+            # key is probably pyarrow.lib.Int64Scalar
+            # which can't be directly converted into a string
+            key_int = int(str(key))
+            key = key_int + self.output_key_start
+        except (ValueError, TypeError):
+            pass
+
         key = str(key)
 
         if metadata is not None and "numpy_metadata" in metadata:

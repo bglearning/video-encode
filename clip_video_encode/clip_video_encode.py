@@ -176,6 +176,7 @@ def clip_video_encode(
     use_dst_name=False,
     distribute="none",
     oom_shard_count=5,
+    output_key_start=0,
     oc_model_name="ViT-B-32",
     pretrained="laion2b_s34b_b79k",
     captioning_strategy="none",
@@ -268,7 +269,7 @@ def clip_video_encode(
 
     assert output_format in ["files", "webdataset"]
     if output_format == "files":
-        writer = FileWriter(dest)
+        writer = FileWriter(dest, output_key_start=output_key_start)
     elif output_format == "webdataset":
         # TODO: maybe include params for this?
         starting_shard_id = int(shards[0].split("/")[-1].split(".tar")[0])
