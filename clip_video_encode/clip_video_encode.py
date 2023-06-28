@@ -11,7 +11,8 @@ from torchvision.transforms import ToPILImage
 from video2numpy.frame_reader import FrameReader
 
 from .reader import Reader
-from .simplemapper import FrameMapper
+# from .simplemapper import FrameMapper
+from .encoders import create_encoder, VideoEncoder
 from .utils import block2dl
 from .writer import FileWriter, WebDatasetWriter
 from .distributed import world_info_from_env
@@ -42,7 +43,7 @@ def encode_chunk(
     frames,
     ind_dict,
     writer,
-    mapper,
+    mapper: VideoEncoder,
     preprocess,
     meta,
     ids,
@@ -62,6 +63,7 @@ def encode_chunk(
                 emb = mapper(batch.to(device))
                 embeddings.append(emb)
 
+        """TODO Reintroduce this later
         caption_embs = None
         if mapper.txt_processor is not None:
             # TODO: is there a better way of doing this?
@@ -69,6 +71,7 @@ def encode_chunk(
             captions = [m["caption"] if "caption" in m else "" for m in meta]
             caption_embs = mapper.encode_captions(captions)
             caption_embs = caption_embs / np.linalg.norm(caption_embs, axis=-1)[:, None]
+        """
 
         embeddings = np.concatenate(embeddings)
         for ref, (i0, it, dst_name) in ind_dict.items():
@@ -81,6 +84,8 @@ def encode_chunk(
                     vid_meta[k] = meta[k][ref].as_py()
 
             frame_embeddings = embeddings[i0:it]
+            # TODO Reintroduce this later
+            """
             if caption_embs is not None:
                 # normalize
                 fe = frame_embeddings / np.linalg.norm(frame_embeddings, axis=-1)[:, None]
@@ -89,6 +94,7 @@ def encode_chunk(
                 sim = (fe @ ce.T).tolist()
 
                 vid_meta["clip_frame_similarity"] = sim
+            """
 
             writer.write(frame_embeddings, vid_id, vid_meta)
     else:
@@ -162,6 +168,7 @@ def clip_video_encode(
     dest="",
     output_format="files",
     take_every_nth=25,
+    encoder_type="open_clip",
     input_format="table",
     frame_workers=1,
     frame_memory_size=4,
@@ -169,6 +176,7 @@ def clip_video_encode(
     use_dst_name=False,
     distribute="none",
     oom_shard_count=5,
+    output_key_start=0,
     oc_model_name="ViT-B-32",
     pretrained="laion2b_s34b_b79k",
     captioning_strategy="none",
@@ -191,6 +199,8 @@ def clip_video_encode(
         str: "files" or "webdataset"
       take_every_nth:
         int: only take every nth frame
+      encoder_type:
+        str: Encoder to use among ('open_clip', 'openai_clip', 'blip2')
       frame_workers:
         int: number of Processes to distribute video reading to.
       frame_memory_size:
@@ -259,21 +269,15 @@ def clip_video_encode(
 
     assert output_format in ["files", "webdataset"]
     if output_format == "files":
-        writer = FileWriter(dest)
+        writer = FileWriter(dest, output_key_start=output_key_start)
     elif output_format == "webdataset":
         # TODO: maybe include params for this?
         starting_shard_id = int(shards[0].split("/")[-1].split(".tar")[0])
         writer = WebDatasetWriter(dest, oom_shard_count, "npy", maxcount=1e6, shard_id=starting_shard_id)
 
     # Initialize model:
-    # model, _, preprocess = open_clip.create_model_and_transforms(oc_model_name, pretrained=pretrained, device=device)
-    # tokenizer = open_clip.get_tokenizer(oc_model_name)
-    # preprocess.transforms = [ToPILImage()] + preprocess.transforms[-3:]
-    preprocess = blip_vis_processors['eval']
-    preprocess.transform.transforms = [ToPILImage()] + preprocess.transform.transforms[-3:]
-    fm = FrameMapper(
-        blip_model, device, txt_processor=None
-    )
+    fm = create_encoder(encoder_type=encoder_type)
+    preprocess = fm.preprocessor
 
     if input_format == "table":
         fr = FrameReader(
