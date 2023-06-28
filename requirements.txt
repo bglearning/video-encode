@@ -13,3 +13,4 @@ video2numpy>=2.3.0,<2.4.0
 fsspec==2022.1.0
 pyarrow>=6.0.1,<8
 pandas>=1.1.5,<2
+CLIP@git+https://github.com/openai/CLIP.git
