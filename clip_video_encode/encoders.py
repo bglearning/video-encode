@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 import numpy as np
 import open_clip
@@ -58,7 +58,7 @@ class OpenAIClipEncoder(VideoEncoder):
     """
     def __init__(self, model_name="ViT-B-32", device="cpu") -> None:
         super().__init__()
-        self.model, self.preprocess = clip.load("ViT-B/32", device=device)
+        self.model, self.preprocess = clip.load(model_name, device=device)
         self.preprocess.transforms = [ToPILImage()] + self.preprocess.transforms
         self.model.eval()
 
@@ -103,13 +103,17 @@ class BLIP2Encoder(VideoEncoder):
         return self.model.extract_features({'text_input': text_inputs}, mode="text").text_embeds.cpu().detach().numpy()
 
 
-def create_encoder(encoder_type: str="open_clip") -> VideoEncoder:
+def create_encoder(encoder_type: str="open_clip", device: Optional[str]=None) -> VideoEncoder:
+
+    if device is None:
+        device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
+
     if encoder_type == 'open_clip':
-        return OpenClipEncoder()
+        return OpenClipEncoder(device=device)
     elif encoder_type == 'openai_clip':
-        return OpenAIClipEncoder()
+        return OpenAIClipEncoder(device=device)
     elif encoder_type == 'blip2':
-        return BLIP2Encoder
+        return BLIP2Encoder(device=device)
     else:
         raise ValueError(f'{encoder_type=} not recognized.'
                          'Must be one of `open_clip`, `openai_clip`, `blip2`')
