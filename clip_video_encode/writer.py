@@ -31,7 +31,7 @@ class FileWriter:
         key = str(key)
 
         if metadata is not None and "numpy_metadata" in metadata:
-            save_pth = os.path.join(self.output_folder, key + ".npz")
+            save_pth = os.path.join(self.output_folder, key + "-fea.npz")
             np_metadata = metadata.pop("numpy_metadata")
             np_metadata["clip_embeddings"] = arr
 
