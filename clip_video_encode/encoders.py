@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, List, Optional
 
 import numpy as np
@@ -77,7 +78,12 @@ class OpenAIClipEncoder(VideoEncoder):
 class BLIP2Encoder(VideoEncoder):
     """VideoEncoder that uses BLIP2
     """
-    def __init__(self, model_name="blip2_feature_extractor", device="cpu", model_type="pretrain") -> None:
+
+    class OutputType(Enum):
+        EMBED = 'embed'
+        EMBED_PROJ = 'embed_proj'
+
+    def __init__(self, model_name="blip2_feature_extractor", device="cpu", model_type="pretrain", output_type: OutputType = OutputType.EMBED) -> None:
         super().__init__()
         model, vis_preprocessors, text_preprocessors = load_model_and_preprocess(model_name,
                                                                                  model_type=model_type,
@@ -86,6 +92,7 @@ class BLIP2Encoder(VideoEncoder):
         self.preprocess = vis_preprocessors['eval']
         self.preprocess.transform.transforms = [ToPILImage()] + self.preprocess.transform.transforms[-3:]
         self.text_preprocess = text_preprocessors['eval']
+        self.output_type = output_type
 
         self.model.eval()
                                                                                 
@@ -94,13 +101,23 @@ class BLIP2Encoder(VideoEncoder):
         return self.preprocess
 
     def __call__(self, frames: torch.tensor, *args: Any, **kwds: Any) -> np.array:
-        return self.model.extract_features({'image': frames}, mode="image").image_embeds.cpu().detach().numpy()
+        image_output = self.model.extract_features({'image': frames}, mode="image")
+        
+        if self.output_type == BLIP2Encoder.OutputType.EMBED:
+            return image_output.image_embeds.cpu().detach().numpy()
+        else:
+            return image_output.image_embeds_proj.cpu().detach().numpy()
 
     def encode_captions(self, captions: List[str]) -> np.array:
         text_inputs = []
         for caption in captions:
             text_inputs.append(self.text_preprocess(caption))
-        return self.model.extract_features({'text_input': text_inputs}, mode="text").text_embeds.cpu().detach().numpy()
+        text_output = self.model.extract_features({'text_input': text_inputs}, mode="text")
+
+        if self.output_type == BLIP2Encoder.OutputType.EMBED:
+            return text_output.text_embeds.cpu().detach().numpy()
+        else:
+            return text_output.text_embeds_proj.cpu().detach().numpy()
 
 
 def create_encoder(encoder_type: str="open_clip", device: Optional[str]=None) -> VideoEncoder:
@@ -114,6 +131,8 @@ def create_encoder(encoder_type: str="open_clip", device: Optional[str]=None) ->
         return OpenAIClipEncoder(device=device)
     elif encoder_type == 'blip2':
         return BLIP2Encoder(device=device)
+    elif encoder_type == 'blip2_proj':
+        return BLIP2Encoder(device=device, output_type=BLIP2Encoder.OutputType.EMBED_PROJ)
     else:
         raise ValueError(f'{encoder_type=} not recognized.'
-                         'Must be one of `open_clip`, `openai_clip`, `blip2`')
+                         'Must be one of `open_clip`, `openai_clip`, `blip2`, `blip2_proj`')
