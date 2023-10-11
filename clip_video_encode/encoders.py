@@ -82,6 +82,7 @@ class BLIP2Encoder(VideoEncoder):
     class OutputType(Enum):
         EMBED = 'embed'
         EMBED_PROJ = 'embed_proj'
+        EMBED_BOTH = 'embed_both'
 
     def __init__(self, model_name="blip2_feature_extractor", device="cpu", model_type="pretrain", output_type: OutputType = OutputType.EMBED) -> None:
         super().__init__()
@@ -104,9 +105,16 @@ class BLIP2Encoder(VideoEncoder):
         image_output = self.model.extract_features({'image': frames}, mode="image")
         
         if self.output_type == BLIP2Encoder.OutputType.EMBED:
+            # (n_frames, 32, 768)
             return image_output.image_embeds.cpu().detach().numpy()
-        else:
+        elif self.output_type == BLIP2Encoder.OutputType.EMBED_PROJ:
+            # (n_frames, 32, 256)
             return image_output.image_embeds_proj.cpu().detach().numpy()
+        else:
+            feat = image_output.image_embeds.cpu().detach().numpy()
+            proj = image_output.image_embeds_proj.cpu().detach().numpy()
+            # (n_frames, 32, 768 + 256)
+            return np.concatenate([feat, proj], axis=-1)
 
     def encode_captions(self, captions: List[str]) -> np.array:
         text_inputs = []
@@ -133,6 +141,8 @@ def create_encoder(encoder_type: str="open_clip", device: Optional[str]=None) ->
         return BLIP2Encoder(device=device)
     elif encoder_type == 'blip2_proj':
         return BLIP2Encoder(device=device, output_type=BLIP2Encoder.OutputType.EMBED_PROJ)
+    elif encoder_type == 'blip2_both':
+        return BLIP2Encoder(device=device, output_type=BLIP2Encoder.OutputType.EMBED_BOTH)
     else:
         raise ValueError(f'{encoder_type=} not recognized.'
                          'Must be one of `open_clip`, `openai_clip`, `blip2`, `blip2_proj`')
