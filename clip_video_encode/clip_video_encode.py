@@ -182,6 +182,7 @@ def clip_video_encode(
     captioning_strategy="none",
     pass_through_keys="mp4,txt,json",
     caption_similarity=False,
+    n_final_frames=None,
 ):
     """
     Encode frames using CLIP image encoder
@@ -295,6 +296,12 @@ def clip_video_encode(
         i = 0
         for vid_frames, info in fr:
             i += 1
+            if n_final_frames is not None:
+                # (Uniformly) Sample n_final_frames instead of taking all frames from the reader
+                # Shape of vid_frames is (n_frames, 224, 224, 3)
+                sample_idx = np.round(np.linspace(0, len(vid_frames) - 1, n_final_frames)).astype(int)
+                vid_frames = vid_frames[sample_idx]
+
             frames.append(vid_frames)
             ind_dict[info["reference"]] = (
                 block_size,
@@ -350,6 +357,10 @@ def clip_video_encode(
 
                     if captioning_strategy == "center":
                         vid_frames = vid_frames[len(vid_frames) // 2 : len(vid_frames) // 2 + 1]
+
+                    if n_final_frames is not None:
+                        sample_idx = np.round(np.linspace(0, len(vid_frames) - 1, n_final_frames)).astype(int)
+                        vid_frames = vid_frames[sample_idx]
 
                     n_frames += len(vid_frames)
                     frames.append(vid_frames)
