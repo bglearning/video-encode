@@ -28,10 +28,10 @@ import io
 
 from .blip_utils import blip_model, blip_text_processors, blip_vis_processors
 
-BATCH_SIZE = 256
+BATCH_SIZE = 384
 IMG_SIZE = 224
 EMB_DIM = 512
-N_DATASET_WORKERS = 6
+N_DATASET_WORKERS = 4
 CHUNK_SIZE = 200
 
 
