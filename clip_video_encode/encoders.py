@@ -1,4 +1,7 @@
+import os
+
 from enum import Enum
+from pathlib import Path
 from typing import Any, List, Optional
 
 import numpy as np
@@ -9,6 +12,10 @@ from clip import clip
 
 from lavis.models import load_model_and_preprocess
 from torchvision.transforms import ToPILImage
+
+
+MODEL_BASE_DIR = os.environ.get("MODEL_BASE_DIR", "~/")
+MODEL_BASE_DIR = Path(MODEL_BASE_DIR).expanduser()
 
 
 class VideoEncoder:
@@ -137,6 +144,8 @@ def create_encoder(encoder_type: str="open_clip", device: Optional[str]=None) ->
         return OpenClipEncoder(device=device)
     elif encoder_type == 'openai_clip':
         return OpenAIClipEncoder(device=device)
+    elif encoder_type == 'openai_clip_vip':
+        return OpenAIClipEncoder(model_name=(MODEL_BASE_DIR / "pretrain_clipvip_base_32.pt"), device=device)
     elif encoder_type == 'blip2':
         return BLIP2Encoder(device=device)
     elif encoder_type == 'blip2_proj':
